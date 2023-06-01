@@ -1,0 +1,33 @@
+server:
+  port: 18086
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  application:
+    name: search
+  data:
+    elasticsearch:
+#集群节点名字
+      cluster-name: my-application
+      cluster-nodes: 39.106.55.241:9300
+#      repositories: com.zxy.search.dao
+eureka:
+  client:
+    service-url:
+      defaultZone: http://127.0.0.1:7001/eureka
+  instance:
+    prefer-ip-address: true
+feign:
+  hystrix:
+    enabled: true
+#超时配置
+ribbon:
+  ReadTimeout: 300000
+
+hystrix:
+  command:
+    default:
+      execution:
+        isolation:
+          thread:
+            timeoutInMilliseconds: 10000
