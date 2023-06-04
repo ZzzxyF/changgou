@@ -5,11 +5,9 @@ import java.util.Map;
 public interface WeiXinPayService {
     /**
      * 订单号，订单金额
-     * @param out_trade_no
-     * @param total_fee
      * @return
      */
-    public Map createNative(String out_trade_no, String total_fee);
+    public Map createNative(Map<String,String> paraMaps);
 
 
     /**

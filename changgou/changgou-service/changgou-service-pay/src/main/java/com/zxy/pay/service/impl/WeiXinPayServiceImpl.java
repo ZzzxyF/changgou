@@ -26,8 +26,9 @@ public class WeiXinPayServiceImpl implements WeiXinPayService {
     @Value("${weixin.notifyurl}")
     private String notifyurl;
     @Override
-    public Map createNative(String out_trade_no, String total_fee) {
-
+    public Map createNative(Map<String,String> paraMaps) {
+        String outTradeNo=paraMaps.get("out_trade_no");//编号
+        String totalFee=paraMaps.get("total_fee");//金额
         try {
             //1、封装参数
             Map param = new HashMap();
@@ -35,8 +36,8 @@ public class WeiXinPayServiceImpl implements WeiXinPayService {
             param.put("mch_id", partner);
             param.put("nonce_str", WXPayUtil.generateNonceStr());
             param.put("body", "畅购");
-            param.put("out_trade_no",out_trade_no);
-            param.put("total_fee", total_fee);
+            param.put("out_trade_no",outTradeNo);
+            param.put("total_fee", totalFee);
             param.put("spbill_create_ip", "127.0.0.1");
             param.put("notify_url", notifyurl);
             param.put("trade_type", "NATIVE");
@@ -51,9 +52,10 @@ public class WeiXinPayServiceImpl implements WeiXinPayService {
             Map<String, String> stringMap = WXPayUtil.xmlToMap(content);
             System.out.println("stringMap:"+stringMap);
             Map<String,String> dataMap = new HashMap<>();
-            dataMap.put("code_url",stringMap.get("code_url"));//code_url是对应的二维码地址
-            dataMap.put("out_trade_no",out_trade_no);
-            dataMap.put("total_fee",total_fee);
+            //code_url是对应的二维码地址
+            dataMap.put("code_url",stringMap.get("code_url"));
+            dataMap.put("out_trade_no",outTradeNo);
+            dataMap.put("total_fee",totalFee);
             return dataMap;
         } catch (Exception e) {
             Map errMap= Maps.newHashMap();

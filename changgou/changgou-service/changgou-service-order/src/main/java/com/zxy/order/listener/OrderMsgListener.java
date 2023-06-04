@@ -11,7 +11,7 @@ import javax.annotation.Resource;
 import java.util.Map;
 
 /**
- * @author zxy
+ * @author zxy 监控zf信息
  */
 @Component
 @RabbitListener(queues = "${mq.pay.queue.order}")
@@ -30,6 +30,7 @@ public class OrderMsgListener {
         }else{
             //支付失败--》订单删除
             orderService.deleteOrder(result.get("out_trade_no"));
+            //todo 缺少库存回滚
         }
     }
 }

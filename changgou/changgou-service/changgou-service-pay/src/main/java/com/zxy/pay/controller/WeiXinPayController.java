@@ -8,6 +8,7 @@ import com.zxy.pay.service.WeiXinPayService;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,6 +18,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import springfox.documentation.spring.web.json.Json;
 
 /**
  * @author DanChe
@@ -35,13 +37,11 @@ public class WeiXinPayController {
 
     /**
      * 支付生成二维码
-     * @param outtradeno
-     * @param money
      * @return
      */
     @RequestMapping(value = "/create/native")
-    public Result createNative(String outtradeno, String money){
-        Map<String,String> resultMap = weiXinPayService.createNative(outtradeno,money);
+    public Result createNative(Map<String,String> paraMaps){
+        Map<String,String> resultMap = weiXinPayService.createNative(paraMaps);
         return new Result(true, StatusCode.OK,"创建二维码预付订单成功！",resultMap);
     }
 
@@ -75,11 +75,16 @@ public class WeiXinPayController {
         }
         outputStream.close();
         inputStream.close();
-
         String resultStr=new String(outputStream.toByteArray(),"utf-8");
         Map<String, String> map = WXPayUtil.xmlToMap(resultStr);
-        String mapStr=JSON.toJSONString(map);
-        rabbitTemplate.convertAndSend(exchange,routing,mapStr);
+        String attach=map.get("attach");
+        //支付订单后的成功失败信息返回---》rabbitmq
+        Map<String,String> paraMaps=JSON.parseObject(attach,Map.class);
+        if(!ObjectUtils.isEmpty(paraMaps)){
+            String exchange= paraMaps.get("exchange");
+            String routing=paraMaps.get("routing");
+            rabbitTemplate.convertAndSend(exchange,routing,map);
+        }
         //响应数据设置
         Map respMap = new HashMap();
         respMap.put("return_code","success");

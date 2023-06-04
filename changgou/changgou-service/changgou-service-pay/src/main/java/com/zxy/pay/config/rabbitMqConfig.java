@@ -16,8 +16,8 @@ public class rabbitMqConfig {
     @Autowired
     private Environment env;
 
-    /***
-     * 创建DirectExchange交换机
+    /**
+     * 创建订单交换机
      * @return
      */
     @Bean
@@ -26,20 +26,32 @@ public class rabbitMqConfig {
     }
 
     /***
-     * 创建队列
-     * @return
+     * 创建队列--》正常订单支付
      */
     @Bean(name = "queueOrder")
     public Queue queueOrder(){
         return new Queue(env.getProperty("mq.pay.queue.order"), true);
     }
 
+    /***
+     * 创建队列--》秒杀商品支付
+     */
+    @Bean(name = "queueSeckillOrder")
+    public Queue queueSeckillOrder(){
+        return new Queue(env.getProperty("mq.pay.queue.seckillorder"), true);
+    }
+
     /****
      * 队列绑定到交换机上
-     * @return
      */
     @Bean
     public Binding basicBinding(){
         return BindingBuilder.bind(queueOrder()).to(basicExchange()).with(env.getProperty("mq.pay.routing.key"));
     }
+
+    @Bean
+    public Binding basicSeckillBinding(){
+        return BindingBuilder.bind(queueSeckillOrder()).to(basicExchange()).with(env.getProperty("mq.pay.routing.seckillorderkey"));
+    }
+
 }

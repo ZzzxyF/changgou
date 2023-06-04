@@ -69,4 +69,17 @@ public interface TbSeckillOrderService {
      */
     SeckillStatus queryStatus(String username);
 
+    /**
+     * zf成功修改状态
+     * @param out_trade_no
+     * @param transaction_id
+     * @param username
+     */
+     void updatePayStatus(String out_trade_no,String transaction_id,String username);
+
+    /**
+     * 关闭、回滚数据
+     */
+    void closeOrder(String  username);
+
 }

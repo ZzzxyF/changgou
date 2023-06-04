@@ -38,15 +38,21 @@ public class MultiThreadingCreateOrder {
   @Value("${SeckillGoodsCountList}")
   public String SeckillGoodsCountList;
 
+  @Value("${SeckillGoods}")
+  public String SeckillGoods;
+
+  @Value("${SeckillOrder}")
+  public String SeckillOrder;
+
   //测试并发下单
   @Async
   public void createOrder(){
 
     //从队列中获取订单信息
-    SeckillStatus seckillStatus=(SeckillStatus)redisTemplate.opsForList().rightPop("SeckillOrderQueue");
+    SeckillStatus seckillStatus=(SeckillStatus)redisTemplate.opsForList().rightPop(SeckillOrderQueue);
     //从商品的数据队列取一个商品，如果能取到说明还有库存
-    Object sgood=redisTemplate.opsForList().rightPop("SeckillGoodsCountList_"+seckillStatus.getGoodsId());
-    if(ObjectUtils.isEmpty(sgood)){
+    Object goods=redisTemplate.opsForList().rightPop(SeckillGoodsCountList+seckillStatus.getGoodsId());
+    if(ObjectUtils.isEmpty(goods)){
       //清空排队信息
       //清空,防止重复排队的key,当前商品已经抢购完了，可以其他商品抢购
       redisTemplate.opsForHash().delete(UserQueueCount,seckillStatus.getUsername());
@@ -63,9 +69,9 @@ public class MultiThreadingCreateOrder {
       //用户抢购商品
       Long id = seckillStatus.getGoodsId();
       //从redis获取秒杀商品信息
-      TbSeckillGoods goods = (TbSeckillGoods) redisTemplate.boundHashOps("SeckillGoods_" + time).get(id);
+      TbSeckillGoods goodRedis = (TbSeckillGoods) redisTemplate.boundHashOps(SeckillGoods + time).get(id);
       //判断是否有库存
-      if(goods==null||goods.getStockCount() <=0){
+      if(goodRedis==null||goodRedis.getStockCount() <=0){
         throw new RuntimeException("库存不足");
       }
 
@@ -73,12 +79,12 @@ public class MultiThreadingCreateOrder {
       TbSeckillOrder seckillOrder = new TbSeckillOrder();
       seckillOrder.setId(idWorker.nextId());
       seckillOrder.setSeckillId(id);
-      seckillOrder.setMoney(goods.getCostPrice());
+      seckillOrder.setMoney(goodRedis.getCostPrice());
       seckillOrder.setUserId(username);
       seckillOrder.setCreateTime(new Date());
       seckillOrder.setStatus("0");
       //创建商品订单到redis
-      redisTemplate.opsForHash().put("SeckillOrder",username,seckillOrder);
+      redisTemplate.opsForHash().put(SeckillOrder,username,seckillOrder);
 
       //这里是判断秒杀时间段商品是否还有库存，如果没有库存需要将对应时间段的商品删除。如果有更新商品信息
       //mysql数据同步不精确，因为此时可能多个线程数据过来拿到的StockCount都是一样的
@@ -97,15 +103,14 @@ public class MultiThreadingCreateOrder {
     Long goodsSize=redisTemplate.boundListOps(SeckillGoodsCountList+seckillStatus.getGoodsId()).size();
     if(goodsSize<=0){
       //更新数据库数据
-      goods.setStockCount(goodsSize.intValue());
-      tbSeckillGoodsDao.update(goods);
+      goodRedis.setStockCount(goodsSize.intValue());
+      tbSeckillGoodsDao.update(goodRedis);
       //删除redis中对应时间段的商品
-      redisTemplate.opsForHash().delete("SeckillGoods_"+time,id);
+      redisTemplate.opsForHash().delete(SeckillGoods+time,id);
     }else{
       //当库存还有，更新此时redis商品库存信息
-      redisTemplate.boundHashOps("SeckillGoods_" + time).put(id,goods);
+      redisTemplate.boundHashOps(SeckillGoods + time).put(id,goods);
     }
-
       //抢单成功，更新抢单状态,排队->等待支付->待支付状态
       seckillStatus.setStatus(2);
       seckillStatus.setOrderId(seckillOrder.getId());

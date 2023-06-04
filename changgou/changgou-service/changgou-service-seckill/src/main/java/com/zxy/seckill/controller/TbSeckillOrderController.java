@@ -39,9 +39,6 @@ public class TbSeckillOrderController {
 
     /**
      * 添加订单
-     * @param time
-     * @param id
-     * @return
      */
     @RequestMapping(value = "/add")
     public Result add(String time ,Long id){
@@ -60,21 +57,17 @@ public class TbSeckillOrderController {
 
 
     /****
-     * 查询抢购
-     * @return
+     * 查询订单状态
      */
     @RequestMapping(value = "/query")
     public Result queryStatus(){
         //获取用户名
         String username = tokenDecode.getUserInfo().get("username");
-
         //根据用户名查询用户抢购状态
         SeckillStatus seckillStatus = tbSeckillOrderService.queryStatus(username);
-
         if(seckillStatus!=null){
-            return new Result(true,seckillStatus.getStatus(),"抢购状态");
+            return new Result(true,seckillStatus.getStatus(),"抢购状态",seckillStatus);
         }
-        //NOTFOUNDERROR =20006,没有对应的抢购数据
         return new Result(false,StatusCode.NOTFOUNDERROR,"没有抢购信息");
     }
 
